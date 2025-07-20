@@ -1,0 +1,10 @@
+.venv
+.vscode
+.log
+
+__pycache__
+.DS_Store
+
+config.json
+*.config.json
+.env
