@@ -1,0 +1,4 @@
+azure-ai-translation-text
+deepl
+dotenv
+discord.py

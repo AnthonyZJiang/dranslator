@@ -7,7 +7,7 @@ import dotenv
 import discord
 
 from .util import setup_logging, is_mostly_chinese, is_ticker_only, is_punctuation_only
-from .translator.azuretranslator import azure_translate
+from .translator.deepltranslator import translate
 
 dotenv.load_dotenv()
 DISCORD_BOT_TOKEN = os.getenv('DISCORD_BOT_TOKEN')
@@ -96,7 +96,7 @@ class Dranslator(discord.Client):
         self.cache_channels()
         
     def cache_channels(self):
-        logger.info(f"Caching channels for message translation...")
+        logger.info(f"Caching channels for auto message translation...")
         for channel_id in self.config['channels']:
             channel = self.get_cached_channel(channel_id)
             if channel is None:
@@ -155,14 +155,14 @@ class Dranslator(discord.Client):
             logger.info(f"Translation found in history.")
             return translation
         
-        response = azure_translate([{'text': message}])
+        response = translate(message)
         
         error_text = response.get('error', None)
         if response is None or error_text:
             logger.error(f"Error translating message: {message}")
             return f'-# :small_orange_diamond:Translation failed\n{error_text}'
         
-        translation = response['translations'][0]
+        translation = response['translation']
         self.translation_history.add_message(message, translation)
         return translation
     
