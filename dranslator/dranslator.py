@@ -7,12 +7,22 @@ import dotenv
 import discord
 
 from .util import setup_logging, is_mostly_chinese, is_ticker_only, is_punctuation_only
-from .translator.deepltranslator import translate
 
 dotenv.load_dotenv()
 DISCORD_BOT_TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 TRIGGER_EMOJI = os.getenv('TRIGGER_EMOJI')
+TRANSLATOR = os.getenv('TRANSLATOR')
 
+if TRANSLATOR == 'deepl':
+    from .translator.deepltranslator import translate
+elif TRANSLATOR == 'gemini':
+    from .translator.geminitranslator import translate
+elif TRANSLATOR == 'azure':
+    from .translator.azuretranslator import translate
+elif TRANSLATOR == 'openai':
+    raise NotImplementedError("OpenAI translator is not implemented yet")
+else:
+    raise ValueError(f"Invalid translator: {TRANSLATOR}")
 
 stream_handler = setup_logging()
 logger = logging.getLogger(__name__)
@@ -77,8 +87,8 @@ class Dranslator(discord.Client):
         intents.message_content = True
         super().__init__(intents=intents)
         
-        self.cached_channels = {} # type: dict[int, discord.TextChannel]
-        self.translated_message_ids = [] # type: list[int]
+        self.cached_channels: dict[int, discord.TextChannel] = {}
+        self.translated_message_ids: list[int] = []
         self.load_config(config_file)
         
         self.translation_history = TranslationHistory()
@@ -159,7 +169,7 @@ class Dranslator(discord.Client):
         
         error_text = response.get('error', None)
         if response is None or error_text:
-            logger.error(f"Error translating message: {message}")
+            logger.error(f"Error translating message: {message}. \nError: {error_text}")
             return f'-# :small_orange_diamond:Translation failed\n{error_text}'
         
         translation = response['translation']
