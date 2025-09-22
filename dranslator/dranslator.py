@@ -20,7 +20,7 @@ elif TRANSLATOR == 'gemini':
 elif TRANSLATOR == 'azure':
     from .translator.azuretranslator import translate
 elif TRANSLATOR == 'openai':
-    raise NotImplementedError("OpenAI translator is not implemented yet")
+    from .translator.openaitranslator import translate
 else:
     raise ValueError(f"Invalid translator: {TRANSLATOR}")
 

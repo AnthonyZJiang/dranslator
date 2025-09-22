@@ -7,7 +7,7 @@ from google.genai import types, errors
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 SYS_INSTRUCTION = """将关于美股交易的英语翻译为中文。只回复翻译内容"""
-MODEL = "gemini-2.0-flash-lite"
+MODEL = os.getenv("DRANSLATOR_LLM_MODEL", "gemini-2.0-flash-lite")
 
 
 client = genai.Client(api_key=GEMINI_API_KEY)
