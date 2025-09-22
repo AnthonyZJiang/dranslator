@@ -11,32 +11,38 @@ client = OpenAI(
 
 
 def translate(input: str):
-    response = client.responses.create(
-        model=MODEL,
-        input=[
-            {
-                "role": "system",
-                "content": [
-                    {
-                        "type": "input_text",
-                        "text": "将关于美股交易的英语翻译为中文。只回复翻译内容:\n" + input
-                    }
-                ]
-            }
-        ],
-        text={
-            "format": {
-                "type": "text"
-            }
-        },
-        reasoning={},
-        tools=[],
-        temperature=1,
-        max_output_tokens=2048,
-        top_p=1,
-        store=True,
-        include=["web_search_call.action.sources"]
-    )
+    try:
+        response = client.responses.create(
+            model=MODEL,
+            input=[
+                {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": "将关于美股交易的英语翻译为中文。只回复翻译内容:\n" + input
+                        }
+                    ]
+                }
+            ],
+            text={
+                "format": {
+                    "type": "text"
+                },
+                "verbosity": "low"
+                    },
+            reasoning={
+                "effort": "minimal"
+            },
+            tools=[],
+            store=True,
+            include=[
+            ]
+        )
+    except Exception as e:
+        return {
+            'error': str(e)
+        }
     if response.error:
         return {
             'error': response.error.message
@@ -44,10 +50,3 @@ def translate(input: str):
     return {
         'translation': response.output_text
     }
-
-
-    # import tiktoken
-
-    # def count_tokens_with_model(text: str, model: str = MODEL) -> int:
-    #     encoding = tiktoken.encoding_for_model(model)
-    #     return len(encoding.encode(text))

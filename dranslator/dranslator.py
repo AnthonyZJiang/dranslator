@@ -87,6 +87,7 @@ class Dranslator(discord.Client):
         intents.message_content = True
         super().__init__(intents=intents)
         
+        self.error_report_channel = None
         self.cached_channels: dict[int, discord.TextChannel] = {}
         self.translated_message_ids: list[int] = []
         self.load_config(config_file)
@@ -113,6 +114,9 @@ class Dranslator(discord.Client):
                 logger.error(f"Channel {channel_id} not found.")
                 continue
             logger.info(f"Channel {channel.guild.name}/{channel.name} added.")
+        
+        if channel := self.config.get('error_report_channel', None):
+            self.error_report_channel = self.get_cached_channel(channel)
             
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.user_id == self.user.id:
@@ -137,7 +141,11 @@ class Dranslator(discord.Client):
         content = MessagePreProcessor(discord_message.content, self.config).preprocess()
         if not self._is_translation_required(content):
             return
-        content = self._get_translation(content)
+        success,content = self._get_translation(content)
+        if not success:
+            if self.error_report_channel:
+                await self._report_error(discord_message, content)
+                return
         channel = self.get_cached_channel(discord_message.channel.id)
         message = await channel.send(content = content, 
                            reference = discord_message)
@@ -159,22 +167,28 @@ class Dranslator(discord.Client):
             return False
         return True
     
-    def _get_translation(self, message: str) -> str:
+    def _get_translation(self, message: str) -> (bool, str):
         translation = self.translation_history.find_translation(message)
         if translation:
             logger.info(f"Translation found in history.")
-            return translation
+            return (True, translation)
         
         response = translate(message)
         
         error_text = response.get('error', None)
         if response is None or error_text:
-            logger.error(f"Error translating message: {message}. \nError: {error_text}")
-            return f'-# :small_orange_diamond:Translation failed\n{error_text}'
+            logger.error(f"Error translating message: {message}. \n{error_text}")
+            return (False, f'-# :small_orange_diamond:Translation failed\n{error_text}')
         
         translation = response['translation']
         self.translation_history.add_message(message, translation)
-        return translation
+        return (True, translation)
+    
+    async def _report_error(self, discord_message: discord.Message, error_text: str) -> None:
+        if self.error_report_channel:
+            content = f"{error_text} | {discord_message.jump_url}"
+            await self.error_report_channel.send(content)
+
     
     def load_config(self, config_file: str):
         with open(config_file, 'r') as f:
