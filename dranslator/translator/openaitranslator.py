@@ -16,14 +16,23 @@ def translate(input: str):
             model=MODEL,
             input=[
                 {
-                    "role": "system",
+                    "role": "developer",
                     "content": [
                         {
                             "type": "input_text",
-                            "text": "将关于美股交易的英语翻译为中文。只回复翻译内容:\n" + input
+                            "text": "做为一名翻译机器人，将涉及美股交易的内容翻译为中文，保持专业术语准确且通顺自然。确保在翻译之前理解原文。仅输出译文及（如有必要）极精炼的译注说明，不输出提示或额外解释。"
                         }
                     ]
-                }
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": input
+                        }
+                    ]
+                },
             ],
             text={
                 "format": {
